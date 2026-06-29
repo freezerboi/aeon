@@ -506,6 +506,7 @@ jobs:
             else
               RESPONSE=$(curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?timeout=0&allowed_updates=%5B%22message%22%5D")
               COUNT=$(echo "$RESPONSE" | jq '.result | length')
+              echo "Telegram returned $COUNT pending update(s)"
               MAX_UPDATE_ID=""
               TG_MESSAGES='[]'
 
@@ -514,9 +515,14 @@ jobs:
                 CHAT=$(echo "$RESPONSE" | jq -r ".result[$i].message.chat.id // empty")
                 UPDATE_ID=$(echo "$RESPONSE" | jq -r ".result[$i].update_id // empty")
 
-                if [ -n "$TEXT" ] && [ "$CHAT" = "$TELEGRAM_CHAT_ID" ]; then
-                  TG_MESSAGES=$(echo "$TG_MESSAGES" | jq --arg src "telegram" --arg txt "$TEXT" '. + [{source: $src, text: $txt}]')
-                  echo "Telegram: $TEXT"
+                if [ -n "$TEXT" ]; then
+                  if [ "$CHAT" = "$TELEGRAM_CHAT_ID" ]; then
+                    TG_MESSAGES=$(echo "$TG_MESSAGES" | jq --arg src "telegram" --arg txt "$TEXT" '. + [{source: $src, text: $txt}]')
+                    echo "Telegram: $TEXT"
+                  else
+                    CHAT_SUFFIX="${CHAT: -4}"
+                    echo "::warning::Telegram update from non-configured chat ending in ${CHAT_SUFFIX:-unknown}; update ignored. Re-set TELEGRAM_CHAT_ID to this chat if it is yours."
+                  fi
                 fi
                 MAX_UPDATE_ID="$UPDATE_ID"
               done
