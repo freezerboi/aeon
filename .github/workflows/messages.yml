@@ -819,7 +819,7 @@ jobs:
           - If they want you to remember something, update memory/MEMORY.md.
           - For anything else, do your best and explain what you did.
 
-          Always send your response back via ./notify so the user sees it."
+          Return only the response text that should be sent back to the user. Do not call ./notify yourself; the workflow will deliver your response."
           if ! CLAUDE_OUTPUT=$(echo "$PROMPT" | claude -p - \
             --model "$MODEL" --allowedTools "$ALLOWED" \
             "${MCP_FLAGS[@]}" --output-format json 2>&1); then
@@ -827,7 +827,13 @@ jobs:
             exit 1
           fi
 
-          echo "$CLAUDE_OUTPUT" | jq -r '.result // empty'
+          RESULT=$(echo "$CLAUDE_OUTPUT" | jq -r '.result // empty')
+          echo "$RESULT"
+          if [ -n "$RESULT" ]; then
+            ./notify "$RESULT"
+          else
+            echo "::warning::Claude returned an empty message response; nothing was sent."
+          fi
 
           INPUT_TOKENS=$(echo "$CLAUDE_OUTPUT" | jq '.usage.input_tokens // 0')
           OUTPUT_TOKENS=$(echo "$CLAUDE_OUTPUT" | jq '.usage.output_tokens // 0')
