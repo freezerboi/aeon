@@ -716,20 +716,53 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
           MSG="$1"
-          if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
-            curl -sf -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          DELIVERED=0
+
+          post_json() {
+            local url="$1"
+            local payload="$2"
+            local response body code
+            response=$(curl -sS -w $'\n%{http_code}' -X POST "$url" \
               -H "Content-Type: application/json" \
-              -d "$(jq -n --arg chat "$TELEGRAM_CHAT_ID" --arg text "$MSG" '{chat_id: $chat, text: $text, parse_mode: "Markdown"}')" > /dev/null || true
+              -d "$payload" 2>&1) || {
+              echo "::warning::notify request failed: ${response}"
+              return 1
+            }
+            code="${response##*$'\n'}"
+            body="${response%$'\n'$code}"
+            if [[ "$code" =~ ^2 ]] && { [ -z "$body" ] || [ "$(jq -r '.ok // true' <<<"$body" 2>/dev/null || echo true)" = "true" ]; }; then
+              return 0
+            fi
+            echo "::warning::notify rejected with HTTP ${code}: $(jq -r '.description // .message // .error // empty' <<<"$body" 2>/dev/null || true)"
+            return 1
+          }
+
+          if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+            TG_URL="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
+            if post_json "$TG_URL" "$(jq -n --arg chat "$TELEGRAM_CHAT_ID" --arg text "$MSG" '{chat_id: $chat, text: $text, parse_mode: "Markdown"}')"; then
+              DELIVERED=1
+              echo "::notice::Telegram notification delivered."
+            elif post_json "$TG_URL" "$(jq -n --arg chat "$TELEGRAM_CHAT_ID" --arg text "$MSG" '{chat_id: $chat, text: $text}')"; then
+              DELIVERED=1
+              echo "::notice::Telegram notification delivered as plain text fallback."
+            else
+              echo "::warning::Telegram notification failed. Re-check TELEGRAM_CHAT_ID, bot token, and whether the chat has started the bot."
+            fi
           fi
           if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
-            curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
-              -H "Content-Type: application/json" \
-              -d "$(jq -n --arg text "$MSG" '{content: $text}')" > /dev/null || true
+            if post_json "$DISCORD_WEBHOOK_URL" "$(jq -n --arg text "$MSG" '{content: $text}')"; then
+              DELIVERED=1
+              echo "::notice::Discord notification delivered."
+            fi
           fi
           if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
-            curl -sf -X POST "$SLACK_WEBHOOK_URL" \
-              -H "Content-Type: application/json" \
-              -d "$(jq -n --arg text "$MSG" '{text: $text}')" > /dev/null || true
+            if post_json "$SLACK_WEBHOOK_URL" "$(jq -n --arg text "$MSG" '{text: $text}')"; then
+              DELIVERED=1
+              echo "::notice::Slack notification delivered."
+            fi
+          fi
+          if [ "$DELIVERED" -eq 0 ]; then
+            echo "::warning::No configured notification channel accepted the reply."
           fi
           NOTIFY_SCRIPT
           chmod +x ./notify
