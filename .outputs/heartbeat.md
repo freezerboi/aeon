@@ -1,14 +1,9 @@
 HEARTBEAT_OK · STATUS_PAGE=OK
 
-## Summary
+All checks clear:
+- **P0**: heartbeat last success 2026-06-30 08:52 UTC (4 runs, 100%, 0 consecutive failures) — well within 36h window
+- **P1**: No open PRs, no urgent issues
+- **P2**: MEMORY.md next-priority items already notified within 48h — deduped, no notification sent
+- **P3**: Only `heartbeat` is enabled; last ran ~5h ago vs 8h interval (2× = 16h threshold) — fine
 
-All checks clean — no flags fired at any priority tier:
-
-- **P0:** Heartbeat last_success 11.5h ago (well within 36h), 3/3 runs, 0 consecutive failures.
-- **P1:** No open PRs, no urgent GitHub issues.
-- **P2:** MEMORY.md follow-up items deduped (notified <48h ago).
-- **P3:** Only `heartbeat` is enabled; last run within its 2× schedule interval.
-
-**Actions taken:**
-- `docs/status.md` rewritten → 🟢 OK
-- `memory/logs/2026-06-30.md` created with this run's entry.
+`docs/status.md` updated to 🟢 OK at 14:00 UTC; next scheduled run is heartbeat at 20:00 UTC.
