@@ -1,16 +1,14 @@
 HEARTBEAT_OK · STATUS_PAGE=OK
 
-All checks clear:
-- **P0**: heartbeat last succeeded 2026-07-01 20:17 UTC (~12h ago, well within 36h), 9/9 runs, 0 consecutive failures
-- **P1**: no open PRs, no urgent issues
-- **P2**: MEMORY.md follow-up items (configure notifications / run first digest) already logged within 48h — deduped
-- **P3**: only `heartbeat` is enabled, ran ~12h ago (within 2× its 4h interval)
+**P0:** Clear. Heartbeat last_success 2026-07-02 08:26 UTC (10 runs, 100% success rate, well within 36h window).
+**P1:** Clear. No open PRs, no urgent issues.
+**P2:** Clear. MEMORY.md items (configure notifications / run first digest) are duplicates of items logged within the last 48h — skipped.
+**P3:** Clear. Only `heartbeat` is enabled; it ran ~6h ago against its 6h schedule interval.
 
-`docs/status.md` updated to 🟢 OK.
+`docs/status.md` updated to 🟢 OK (next run: heartbeat at 20:00 UTC).
 
 ## Summary
-- Read `memory/cron-state.json`, `memory/issues/INDEX.md`, `aeon.yml`, and last 2 days of logs
-- All priority checks (P0–P3) passed clean
-- Overwrote `docs/status.md` with updated timestamp and skill health table
-- Created `memory/logs/2026-07-02.md` with this run's log entry
-- No notification sent (nothing actionable, all flagged memory items deduped within 48h)
+- Read `memory/cron-state.json`, `aeon.yml`, `memory/issues/INDEX.md`, and last 2 days of logs
+- All P0–P3 checks passed with no flags
+- Rewrote `docs/status.md` with updated timestamp and next-run time
+- Appended log entry to `memory/logs/2026-07-02.md`
